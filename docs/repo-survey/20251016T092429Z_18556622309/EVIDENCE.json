@@ -1,0 +1,17 @@
+{
+  "counts": {
+    "SERVER_ENDPOINTS": 0,
+    "API_HINTS": 2,
+    "FE_ROUTES": 9,
+    "DATA_MODELS": 3,
+    "TESTS": 4,
+    "ENV_VARS": 2,
+    "EXTERNALS": 120
+  },
+  "fe_pages_count": 0,
+  "manifests_present": [
+    "README.md",
+    "build.gradle",
+    "settings.gradle"
+  ]
+}

@@ -1,0 +1,66 @@
+.github/
+  workflows/
+    repo-surveyor.yml
+.gitignore/
+LICENSE.txt/
+README.md/
+SPD-classes/
+  build.gradle/
+  src/
+    main
+android/
+  .gitignore/
+  build.gradle/
+  proguard-rules.pro/
+  src/
+    debug
+    main
+build.gradle/
+core/
+  build.gradle/
+  src/
+    main
+desktop/
+  build.gradle/
+  macos-entitlements.plist/
+  notarize.sh/
+  src/
+    main
+docs/
+  FUNDING.yml/
+  PULL_REQUEST_TEMPLATE.md/
+  getting-started-android.md/
+  getting-started-desktop.md/
+  getting-started-ios.md/
+  procedural_generation.md/
+  recommended-changes.md/
+gradle/
+  wrapper/
+    gradle-wrapper.jar
+    gradle-wrapper.properties
+gradle.properties/
+gradlew/
+gradlew.bat/
+ios/
+  .gitignore/
+  Info.plist/
+  assets/
+    Assets.xcassets
+    LaunchScreen.storyboard
+    PrivacyInfo.xcprivacy
+    music
+  build.gradle/
+  robovm.xml/
+  src/
+    main
+services/
+  build.gradle/
+  news/
+    debugNews
+    shatteredNews
+  src/
+    main
+  updates/
+    debugUpdates
+    githubUpdates
+settings.gradle/

@@ -1,0 +1,3 @@
+.github/workflows/repo-surveyor.yml:76: SQLAlchemy|TypeORM|ActiveRecord|Django\s+models", re.I),             "TESTS": re.compile(r"\b(describe|it|test)\s*\(|\bp
+.github/workflows/repo-surveyor.yml:76: TypeORM|ActiveRecord|Django\s+models", re.I),             "TESTS": re.compile(r"\b(describe|it|test)\s*\(|\bpytest\b|\bu
+.github/workflows/repo-surveyor.yml:76: ActiveRecord|Django\s+models", re.I),             "TESTS": re.compile(r"\b(describe|it|test)\s*\(|\bpytest\b|\bunittest\

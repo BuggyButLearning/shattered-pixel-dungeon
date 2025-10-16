@@ -1,0 +1,2 @@
+.github/workflows/repo-surveyor.yml:74: openapi:|swagger:|schema\.graphql|\btype\s+Query\b|\btype\s+Mutation\b|z\.object\(|t\.router\(", re.I),             "FE_
+.github/workflows/repo-surveyor.yml:74: swagger:|schema\.graphql|\btype\s+Query\b|\btype\s+Mutation\b|z\.object\(|t\.router\(", re.I),             "FE_ROUTES": 

@@ -1,0 +1,4 @@
+core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Pylon.java:153: it 		((PylonSprite) sprite).activate(); 	}  	@Override 	public CharSprite sprite() { 		PylonSprite p = (PylonSprite) sup
+core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/mobs/Mob.java:775: it (false) 	public boolean heroShouldInteract(){ 		return alignment != Alignment.ENEMY && buff(Amok.class) == null; 	}  
+core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ui/changelist/v0_7_X_Changes.java:624: it (she 'furrows' it instead).")); 		 		changes.addButton( new ChangeButton( new Image(Assets.Sprites.HUNTRESS, 0, 90, 1
+core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/items/Honeypot.java:153: it (if anyone). 	public static class ShatteredPot extends Item {  		{ 			image = ItemSpriteSheet.SHATTPOT; 			stackable 

@@ -1,0 +1,2 @@
+desktop/src/main/java/com/shatteredpixel/shatteredpixeldungeon/desktop/DesktopLauncher.java:159: System.getenv("XDG_DATA_HOME"); 			if (XDGHome == null) XDGHome = System.getProperty("user.home") + "/.local/share";  		
+ios/src/main/java/com/shatteredpixel/shatteredpixeldungeon/ios/IOSLauncher.java:80: System.getenv("HOME"), "Library"); 			File finalPath = new File(libraryPath, SPDSettings.DEFAULT_PREFS_FILE + ".plist");
