@@ -1,0 +1,156 @@
+name: Repo Surveyor
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  survey:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history not required)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Surveyor
+        run: |
+          python - <<'PY'
+          import os, re, json, pathlib
+
+          ROOT = pathlib.Path(".")
+          OUT = ROOT / "survey_out"
+          OUT.mkdir(exist_ok=True)
+
+          SKIP_DIRS = {".git","node_modules","dist","build","out",".next",".vite","coverage",".venv","__pycache__","target",".dart_tool",".gradle",".idea",".vscode"}
+          CODE_EXT = {".js",".ts",".tsx",".jsx",".py",".go",".rb",".rs",".java",".kt",".php",".cs",".scala",".sql",".yml",".yaml",".json",".toml",".graphql",".gql"}
+          MAX_FILE_BYTES = 1_500_000  # skip huge blobs
+
+          # -------- Helpers
+          def good(path: pathlib.Path)->bool:
+            parts = set(p.name for p in path.parents)
+            if any(d in SKIP_DIRS for d in parts): return False
+            return True
+
+          def walk_files():
+            for p in ROOT.rglob("*"):
+              if p.is_file() and good(p):
+                try:
+                  if p.stat().st_size <= MAX_FILE_BYTES:
+                    yield p
+                except Exception: pass
+
+          def read_text(p: pathlib.Path):
+            try:
+              return p.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+              return ""
+
+          # -------- Repo map (depth 3)
+          def repo_map(depth=3):
+            tree = {}
+            for p in walk_files():
+              rel = p.relative_to(ROOT).parts
+              node = tree
+              for i,part in enumerate(rel[:depth]):
+                node = node.setdefault(part, {} if i<depth-1 else None)
+            lines=[]
+            def rec(n, pref="", d=0):
+              if n is None: return
+              for k in sorted(n.keys()):
+                lines.append(f"{'  '*d}{k}/" if n[k] is not None else f"{'  '*d}{k}")
+                rec(n[k], pref+k+"/", d+1)
+            rec(tree)
+            return "\n".join(lines)
+
+          # -------- Pattern scans
+          P = {
+            "server_endpoints": re.compile(r"""
+              (?:app\.(?:get|post|put|delete|patch|use)\s*\()|
+              (?:new\s+Express\s*\()|
+              (?:FastAPI\s*\()|(?:@app\.route)|
+              (?:gin\.Default\(\))|(?:http\.ListenAndServe)|
+              (?:Django.*urls\.py)|(?:Flask\()|
+              (?:NestFactory\.create)|(?:Hono\()|
+              (?:SpringApplication\.run)|(?:router\.add_api_route)
+            """, re.X),
+            "api_hints": re.compile(r"openapi:|swagger:|schema\.graphql|\btype\s+Query\b|\btype\s+Mutation\b|z\.object\(|t\.router\(", re.I),
+            "fe_routes": re.compile(r"createBrowserRouter\(|react-router|next/navigation|NextResponse|pages/|app/|vue-router|defineRoute", re.I),
+            "data_models": re.compile(r"prisma\.schema|@Entity\(|Sequelize\.define\(|mongoose\.model\(|SQLAlchemy|TypeORM|ActiveRecord|Django\s+models", re.I),
+            "tests": re.compile(r"\b(describe|it|test)\s*\(|\bpytest\b|\bunittest\b|\brspec\b|\bJUnit\b", re.I),
+            "env_vars": re.compile(r"""
+                (?:process\.env\.[A-Z0-9_]+)|
+                (?:os\.environ\[['"][A-Z0-9_]+['"]\])|
+                (?:getenv\(['"][A-Z0-9_]+['"]\))|
+                (?:System\.getenv\(['"][A-Z0-9_]+['"]\))
+            """, re.X),
+            "externals": re.compile(r"""
+                stripe|twilio|sendgrid|mailgun|s3|boto3|@aws-sdk|
+                firebase|supabase|algolia|auth0|clerk|okta|passport|next-auth|
+                datadog|sentry|newrelic|posthog|segment|mixpanel|
+                bull|agenda|celery|rq|sidekiq|apscheduler
+            """, re.I),
+          }
+
+          buckets = {k: [] for k in P.keys()}
+
+          for p in walk_files():
+            ext = p.suffix.lower()
+            if ext and ext not in CODE_EXT and p.name not in {"urls.py"}:
+              continue
+            txt = read_text(p)
+            if not txt: continue
+            for name, rx in P.items():
+              for m in rx.finditer(txt):
+                # store "path:line_no:snippet"
+                line_no = txt.count("\n", 0, m.start()) + 1
+                snippet = txt[m.start():m.start()+120].replace("\n"," ")
+                buckets[name].append(f"{p.as_posix()}:{line_no}: {snippet}")
+
+          # -------- Manifests snapshot
+          manifests = {}
+          MANIFEST_FILES = [
+            "README.md","package.json","pnpm-workspace.yaml","yarn.lock",
+            "requirements.txt","pyproject.toml","poetry.lock",
+            "go.mod","Cargo.toml","composer.json","Gemfile","Gemfile.lock",
+            "pom.xml","build.gradle","settings.gradle","Pipfile","Pipfile.lock"
+          ]
+          for m in MANIFEST_FILES:
+            f = ROOT / m
+            if f.exists():
+              manifests[m] = read_text(f)[:200000]  # cap to keep artifacts sane
+
+          # -------- Next/React route inference (files)
+          fe_pages = []
+          for p in walk_files():
+            if "/pages/" in p.as_posix() or "/app/" in p.as_posix():
+              fe_pages.append(p.as_posix())
+
+          # -------- Write outputs
+          (OUT / "REPO_MAP.txt").write_text(repo_map(), encoding="utf-8")
+          for k,v in buckets.items():
+            (OUT / f"{k.upper()}.txt").write_text("\n".join(v), encoding="utf-8")
+          (OUT / "FE_PAGES_FILES.txt").write_text("\n".join(sorted(fe_pages)), encoding="utf-8")
+          (OUT / "MANIFESTS.json").write_text(json.dumps(manifests, indent=2), encoding="utf-8")
+
+          # Evidence bundle
+          evidence = {
+            "repo_map": (OUT/"REPO_MAP.txt").read_text(),
+            "buckets_counts": {k: len(v) for k,v in buckets.items()},
+            "fe_pages_count": len(fe_pages),
+            "manifests_present": list(manifests.keys())
+          }
+          (OUT / "EVIDENCE.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+          print("Wrote survey_out/*")
+          PY
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-survey
+          path: survey_out/*
+          if-no-files-found: error
